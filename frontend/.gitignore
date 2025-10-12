@@ -1,0 +1,64 @@
+
+# Node
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+dist/
+build/
+dist-ssr/
+
+# Vite cache
+.vite/
+.cache/
+
+# Local env files (do NOT ignore example files like .env.example)
+.env
+.env.local
+.env.*.local
+*.local
+
+# Editor directories and files
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Misc
+*.pem
+.npm
+
+# Yarn (optional for Yarn Berry)
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.gz
+
+# Storybook
+.out/
+.storybook/
+
+# Editor swap files
+*~
+*.swp
+
+# Mac resource forks
+Icon?
