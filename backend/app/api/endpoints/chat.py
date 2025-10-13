@@ -1,14 +1,13 @@
-# backend/app/api/endpoints/chat.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from langchain_core.messages import HumanMessage, AIMessage # <-- Import message types
+from langchain_core.messages import HumanMessage, AIMessage
 
 from app.db.session import get_db
 from app.db import models # <-- Import models
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services import agent_service
-from app.api.endpoints.documents import get_current_user # <-- Reuse our dummy user auth
+from app.services.auth_service import get_current_user
 
 router = APIRouter()
 

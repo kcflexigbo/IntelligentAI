@@ -13,8 +13,6 @@ class Settings:
     Application settings loaded from environment variables.
     """
     # Note: The DATABASE_URL must start with "postgresql+asyncpg://"
-    # for SQLAlchemy's async support with asyncpg.
-    # Example: postgresql+asyncpg://user:password@localhost:5432/learning_assistant
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # Embedding model configuration
@@ -24,5 +22,9 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "DEFAULT_KEY")
     OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
+
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "a_default_secret_key")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
 settings = Settings()

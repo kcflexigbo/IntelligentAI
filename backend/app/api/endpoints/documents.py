@@ -6,15 +6,7 @@ from app.db import models
 from app.schemas.document import DocumentResponse
 from app.services import rag_service
 from sqlalchemy import select
-
-# --- DUMMY AUTH DEPENDENCY (to be replaced later) ---
-# In a real application, this would come from your auth service.
-# For now, we'll simulate a logged-in user.
-async def get_current_user() -> models.User:
-    # This is a placeholder. We will create a real user for testing.
-    # In the future, this will decode a JWT token.
-    return models.User(id=1, email="testuser@example.com")
-# ---
+from app.services.auth_service import get_current_user
 
 router = APIRouter()
 

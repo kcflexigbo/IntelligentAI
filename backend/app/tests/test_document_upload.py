@@ -9,19 +9,14 @@ from app.db import models
 pytestmark = pytest.mark.asyncio
 
 async def test_upload_document_and_process(
-    client: AsyncClient, db_session: AsyncSession
+    authenticated_client: AsyncClient, db_session: AsyncSession
 ):
     """
     Tests the entire document upload and processing flow.
     """
-    # --- 1. SETUP: Create a test user in the database ---
-    test_user = models.User(
-        id=1,  # Use a predictable ID
-        email="test@example.com",
-        hashed_password="fake_password"
-    )
-    db_session.add(test_user)
-    await db_session.commit()
+    res = await db_session.execute(select(models.User).where(models.User.email == "test@example.com"))
+    test_user = res.scalar_one()
+    user_id = test_user.id
 
     # --- 2. ACTION: Upload a dummy text file ---
     dummy_file_content = "This is a test document for the learning assistant."
@@ -29,13 +24,13 @@ async def test_upload_document_and_process(
     
     # The client will hit our endpoint, which uses a dummy get_current_user
     # that returns a user with id=1.
-    response = await client.post("/documents/upload", files=files)
+    response = await authenticated_client.post("/documents/upload", files=files)
 
     # --- 3. ASSERTIONS: Check the API response ---
     assert response.status_code == 200
     data = response.json()
     assert data["filename"] == "test_doc.txt"
-    assert data["user_id"] == 1
+    assert data["user_id"] == user_id
     document_id = data["id"]
 
     # --- 4. VERIFICATION: Check the database content ---

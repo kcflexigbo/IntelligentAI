@@ -12,7 +12,6 @@ from app.core.config import settings
 from app.services.rag_service import embeddings # Reuse the same embedding model
 from app.db import models
 
-# --- 1. DEFINE AGENT STATE ---
 
 class RAGState(TypedDict):
     """
@@ -23,10 +22,8 @@ class RAGState(TypedDict):
     rewritten_question: str         # <-- Add rewritten question
     context: List[str]
     answer: str
+    documents: List[models.DocumentChunk]
 
-# --- 2. CONFIGURE LLM and PROMPT ---
-
-# Initialize the LLM using your provider's details
 llm = ChatOpenAI(
     model=settings.LLM_MODEL_NAME,
     api_key=settings.OPENAI_API_KEY,
@@ -34,7 +31,6 @@ llm = ChatOpenAI(
     temperature=0.7,
 )
 
-# Define the prompt template for the generation step
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -60,25 +56,67 @@ rewriter_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# Define the output structure we want from the LLM
 class RAGAnswer(BaseModel):
     """The final answer to the user's question."""
     answer: str = Field(description="The final answer to the user's question.")
 
-# Chain the prompt, LLM, and output parser together
 rag_chain = prompt | llm.with_structured_output(RAGAnswer)
 
 class RewrittenQuestion(BaseModel):
     """The rewritten, standalone question."""
     rewritten_question: str = Field(description="The standalone version of the user's question.")
 
-# Chain for the rewriter
 rewriter_chain = rewriter_prompt | llm.with_structured_output(RewrittenQuestion)
 
+class GradeDocuments(BaseModel):
+    """Binary score for document relevance."""
+    binary_score: str = Field(
+        description="Is the document relevant to the user's question? 'yes' or 'no'."
+    )
+
+grading_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a grader assessing the relevance of a retrieved document to a user question. "
+            "If the document contains keywords or semantic meaning related to the question, grade it as relevant. "
+            "Give a binary 'yes' or 'no' score to indicate whether the document is relevant.",
+        ),
+        ("human", "Retrieved Document:\n\n{document}\n\nUser Question: {question}"),
+    ]
+)
+
+grading_chain = grading_prompt | llm.with_structured_output(GradeDocuments)
 
 
 
-# --- 3. DEFINE GRAPH NODES ---
+async def retrieve_node(state: RAGState, config: RunnableConfig) -> RAGState:
+    """
+    Node wrapper to retrieve documents with database session from config.
+    """
+    db = config.get("configurable", {}).get("db")
+    return await retrieve_documents(state, db)
+
+async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
+    """
+    Node to retrieve documents. This now retrieves more documents initially
+    and stores the full objects in the state.
+    """
+    print("---RETRIEVING DOCUMENTS---")
+    question_for_retrieval = state["rewritten_question"]
+    
+    question_embedding = embeddings.embed_query(question_for_retrieval)
+    
+    query = (
+        select(models.DocumentChunk)
+        .order_by(models.DocumentChunk.embedding.l2_distance(question_embedding))
+        .limit(10)
+    )
+    result = await db.execute(query)
+    retrieved_docs = result.scalars().all()
+    
+    return {**state, "documents": retrieved_docs}
+
 
 async def rewrite_query(state: RAGState) -> RAGState:
     """
@@ -88,7 +126,6 @@ async def rewrite_query(state: RAGState) -> RAGState:
     question = state["question"]
     chat_history = state["chat_history"]
 
-    # If there's no history, the question is already standalone
     if not chat_history:
         return {**state, "rewritten_question": question}
 
@@ -97,75 +134,87 @@ async def rewrite_query(state: RAGState) -> RAGState:
     )
     return {**state, "rewritten_question": response.rewritten_question}
 
-
-async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
+async def grade_documents(state: RAGState) -> RAGState:
     """
-    Node to retrieve relevant documents from the database using the rewritten question.
+    Node to grade the relevance of retrieved documents.
     """
-    print("---RETRIEVING DOCUMENTS---")
-    # --- THIS IS THE KEY CHANGE: Use the rewritten_question for retrieval ---
-    question_for_retrieval = state["rewritten_question"]
-    print(f"---Question for retrieval: {question_for_retrieval}---")
+    print("---GRADING DOCUMENTS---")
+    question = state["rewritten_question"]
+    documents_to_grade = state["documents"]
     
-    question_embedding = embeddings.embed_query(question_for_retrieval)
-    
-    query = (
-        select(models.DocumentChunk)
-        .order_by(models.DocumentChunk.embedding.l2_distance(question_embedding))
-        .limit(5)
-    )
-    result = await db.execute(query)
-    retrieved_docs = result.scalars().all()
-    
-    retrieved_context = [doc.content for doc in retrieved_docs]
-    
-    return {**state, "context": retrieved_context}
+    relevant_docs = []
+    for doc in documents_to_grade:
+        result = await grading_chain.ainvoke({"question": question, "document": doc.content})
+        if result.binary_score.lower() == "yes":
+            print(f"---Document ID {doc.id} is RELEVANT---")
+            relevant_docs.append(doc)
+        else:
+            print(f"---Document ID {doc.id} is NOT RELEVANT---")
+            
+    return {**state, "documents": relevant_docs}
 
 async def generate_answer(state: RAGState) -> RAGState:
     """
-    Node to generate an answer using the LLM.
+    Node to generate an answer. This now gets its context from the
+    filtered 'documents' field.
     """
     print("---GENERATING ANSWER---")
-    # --- Use the ORIGINAL question for the final answer ---
-    # This gives the LLM the most direct version of what the user asked.
     question = state["question"]
-    context = state["context"]
+    context = [doc.content for doc in state["documents"]]
     
     response = await rag_chain.ainvoke({"question": question, "context": "\n---\n".join(context)})
     
-    return {**state, "answer": response.answer}
+    return {**state, "answer": response.answer, "context": context}
 
-async def retrieve_node(state: RAGState, config: RunnableConfig) -> RAGState:
+def decide_to_generate(state: RAGState) -> str:
     """
-    Node wrapper to retrieve documents with database session from config.
+    Conditional edge logic. If relevant documents are found, generate an answer.
+    Otherwise, end the process with a fallback message.
     """
-    db = config.get("configurable", {}).get("db")
-    return await retrieve_documents(state, db)
+    print("---ASSESSING RELEVANCE---")
+    if not state["documents"]:
+        print("---No relevant documents found. Ending with fallback.---")
+        fallback_answer = "I could not find any relevant information in the provided documents to answer your question."
+        return "end_with_fallback"
+    else:
+        return "generate"
 
-# --- 4. BUILD THE GRAPH ---
 
 workflow = StateGraph(RAGState)
 
-# Add the nodes
-workflow.add_node("rewrite", rewrite_query) # <-- Add new node
+workflow.add_node("rewrite", rewrite_query)
 workflow.add_node("retrieve", retrieve_node)
+workflow.add_node("grade", grade_documents) 
 workflow.add_node("generate", generate_answer)
+# A special node for the fallback case
+workflow.add_node("end_with_fallback", 
+                  lambda state: {
+                      **state, 
+                      "answer": "I could not find any relevant information in the provided documents to answer your question.",
+                        "context": []}
+                )
 
-# Define the edges
-workflow.set_entry_point("rewrite") # <-- Change entry point
-workflow.add_edge("rewrite", "retrieve") # <-- New edge
-workflow.add_edge("retrieve", "generate")
+workflow.set_entry_point("rewrite")
+workflow.add_edge("rewrite", "retrieve")
+workflow.add_edge("retrieve", "grade") 
+workflow.add_conditional_edges(
+    "grade", 
+    decide_to_generate, 
+    {
+        "generate": "generate", 
+        "end_with_fallback": "end_with_fallback" 
+    }
+)
 workflow.add_edge("generate", END)
+workflow.add_edge("end_with_fallback", END)
 
 app = workflow.compile()
 
-# --- 5. EXPOSED SERVICE FUNCTION ---
+app.get_graph().draw_mermaid_png(
+    output_file_path="rag_workflow.png"
+)
 
-# Update the function signature to accept chat_history
 async def invoke_agent(question: str, chat_history: List[BaseMessage], db: AsyncSession) -> dict:
-    """
-    Main function to run the RAG agent.
-    """
     initial_state = {"question": question, "chat_history": chat_history}
     final_state = await app.ainvoke(initial_state, {"configurable": {"db": db}})
     return final_state

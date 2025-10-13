@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from app.db.session import Base, get_db
 from app.main import app as main_app # Import your main app
 from app.core.config import settings
+from app.services import auth_service
 
 # --- 1. SETUP TEST DATABASE ---
 url = settings.DATABASE_URL
@@ -68,3 +69,32 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=main_app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
+
+
+@pytest.fixture(scope="function")
+async def authenticated_client(
+    client: AsyncClient, db_session: AsyncSession
+) -> AsyncClient:
+    """
+    Fixture to create an authenticated client.
+    It registers and logs in a test user, then sets the
+    authorization header on the client for subsequent requests.
+    """
+    # 1. Register a new user
+    user_data = {"email": "test@example.com", "password": "testpassword"}
+    await client.post("/auth/register", json=user_data)
+
+    # 2. Log in to get the token
+    login_data = {
+        "username": user_data["email"],
+        "password": user_data["password"],
+    }
+    response = await client.post("/auth/login", data=login_data)
+    token = response.json()["access_token"]
+
+    # 3. Set the authorization header for the client
+    client.headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    
+    return client
