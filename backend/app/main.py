@@ -2,8 +2,18 @@ from fastapi import FastAPI
 from app.api.endpoints import documents
 from app.api.endpoints import chat
 from app.api.endpoints import auth
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Intelligent Learning Assistant")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 
 # Include the routers
 app.include_router(documents.router, prefix="/documents", tags=["documents"])
