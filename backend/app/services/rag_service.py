@@ -1,4 +1,3 @@
-# backend/app/services/rag_service.py
 import os
 from tempfile import NamedTemporaryFile
 from typing import List

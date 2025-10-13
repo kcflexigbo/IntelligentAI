@@ -1,4 +1,3 @@
-# backend/app/tests/test_chat_endpoint.py
 import pytest
 from unittest.mock import AsyncMock
 

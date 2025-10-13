@@ -1,4 +1,3 @@
-# backend/app/db/models.py
 import uuid
 from datetime import datetime, timezone
 
