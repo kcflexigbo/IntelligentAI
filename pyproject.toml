@@ -13,6 +13,7 @@ dependencies = [
     "langchain>=0.3.27",
     "langchain-community>=0.3.31",
     "langchain-openai>=0.3.35",
+    "langchain-unstructured>=0.1.5",
     "langgraph>=0.6.10",
     "passlib[bcrypt]>=1.7.4",
     "psycopg2-binary>=2.9.11",
@@ -28,3 +29,8 @@ dependencies = [
     "unstructured[md,ppt]>=0.18.15",
     "uvicorn>=0.37.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/app/tests"]
+pythonpath = ["backend"]
+asyncio_mode = "auto"

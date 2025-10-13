@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.session import get_db
-from backend.app.db import models
-from backend.app.schemas.document import DocumentResponse
-from backend.app.services import rag_service
+from app.db.session import get_db
+from app.db import models
+from app.schemas.document import DocumentResponse
+from app.services import rag_service
+from sqlalchemy import select
 
 # --- DUMMY AUTH DEPENDENCY (to be replaced later) ---
 # In a real application, this would come from your auth service.
@@ -45,6 +46,9 @@ async def upload_document(
     await db.commit()
     await db.refresh(document) # Refresh to get the auto-generated ID
 
+    # Store the document ID before processing (while still in session)
+    document_id = document.id
+    
     # --- 2. Trigger the processing and embedding ---
     # This function handles the heavy lifting: chunking, embedding, and storing.
     await rag_service.process_and_embed_document(
@@ -54,4 +58,17 @@ async def upload_document(
         filename=file.filename
     )
 
-    return document
+    # Re-query the document to get a fresh instance attached to the current session
+    # This prevents lazy-loading issues when FastAPI serializes the response
+    result = await db.execute(select(models.Document).where(models.Document.id == document_id))
+    refreshed_document = result.scalar_one()
+    
+    # Create response using the refreshed document
+    response_data = DocumentResponse(
+        id=refreshed_document.id,
+        filename=refreshed_document.filename,
+        uploaded_at=refreshed_document.uploaded_at,
+        user_id=refreshed_document.user_id
+    )
+    
+    return response_data

@@ -3,12 +3,15 @@ import os
 from tempfile import NamedTemporaryFile
 from typing import List
 
-from langchain_community.document_loaders import PyPDFLoader, UnstructuredFileLoader
+from langchain_community.document_loaders import PyPDFLoader
+import warnings
+
+from langchain_unstructured import UnstructuredLoader as UnstructuredFileLoader  # type: ignore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db import models
+from app.db import models
 
 # --- 1. CONFIGURE EMBEDDING MODEL & TEXT SPLITTER ---
 

@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.session import get_db
-from backend.app.schemas.chat import ChatRequest, ChatResponse
-from backend.app.services import agent_service
+from app.db.session import get_db
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.services import agent_service
 
 router = APIRouter()
 

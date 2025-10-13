@@ -1,6 +1,6 @@
 # backend/app/db/models.py
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column,
@@ -16,8 +16,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
-from backend.app.db.session import Base
-from backend.app.core.config import settings
+from app.db.session import Base
+from app.core.config import settings
 
 class User(Base):
     __tablename__ = "users"
@@ -25,7 +25,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
@@ -37,7 +37,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     owner = relationship("User", back_populates="documents")
@@ -64,7 +64,7 @@ class ChatMessage(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     is_from_user = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, server_default=func.now()) # Use server timestamp
+    created_at = Column(DateTime(timezone=True), server_default=func.now()) # Use server timestamp
 
     # Relationships
     user = relationship("User", back_populates="chat_messages")

@@ -5,11 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
-from backend.app.core.config import settings
-from backend.app.services.rag_service import embeddings # Reuse the same embedding model
-from backend.app.db import models
+from app.core.config import settings
+from app.services.rag_service import embeddings # Reuse the same embedding model
+from app.db import models
 
 # --- 1. DEFINE AGENT STATE ---
 

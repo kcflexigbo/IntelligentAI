@@ -17,41 +17,37 @@ if not url.find("learning_assistant_test") != -1:
     url = url.replace("learning_assistant", "learning_assistant_test")
 TEST_DATABASE_URL = url
 
-engine = create_async_engine(TEST_DATABASE_URL, echo=True)
-TestingSessionLocal = async_sessionmaker(
-    autocommit=False, autoflush=False, bind=engine
-)
-
 # --- 2. PYTEST FIXTURES ---
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for each test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 async def db_engine():
     """
-    Fixture to set up the test database.
-    Creates all tables before tests run, and drops them after.
+    Fixture to create and manage the database engine per test function.
     """
+    engine = create_async_engine(TEST_DATABASE_URL, echo=True, poolclass=None)
+    
     async with engine.begin() as conn:
         # Make sure to create the vector extension
         await conn.run_sync(Base.metadata.drop_all)
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
+    
     yield engine
-    # Teardown: drop all tables after tests are done
+    
+    # Teardown: drop all tables after test is done
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    
+    await engine.dispose()
 
 @pytest.fixture(scope="function")
 async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
     """
     Fixture to provide a database session per test function.
     """
+    TestingSessionLocal = async_sessionmaker(
+        autocommit=False, autoflush=False, bind=db_engine
+    )
     async with TestingSessionLocal() as session:
         yield session
 

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from backend.app.api.endpoints import documents
-from backend.app.api.endpoints import chat # <-- IMPORT THE NEW ROUTER
+from app.api.endpoints import documents
+from app.api.endpoints import chat # <-- IMPORT THE NEW ROUTER
 
 app = FastAPI(title="Intelligent Learning Assistant")
 
