@@ -16,8 +16,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
-from app.db.session import Base
-from app.core.config import settings
+from backend.app.db.session import Base
+from backend.app.core.config import settings
 
 class User(Base):
     __tablename__ = "users"

@@ -8,7 +8,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import models
+from backend.app.db import models
 
 # --- 1. CONFIGURE EMBEDDING MODEL & TEXT SPLITTER ---
 

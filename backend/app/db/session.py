@@ -1,7 +1,7 @@
 # backend/app/db/session.py
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
-from app.core.config import settings
+from backend.app.core.config import settings
 
 # Create an asynchronous engine
 # The engine is the starting point for any SQLAlchemy application.

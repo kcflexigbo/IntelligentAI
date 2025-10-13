@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
-from app.db import models
-from app.schemas.document import DocumentResponse
-from app.services import rag_service
+from backend.app.db.session import get_db
+from backend.app.db import models
+from backend.app.schemas.document import DocumentResponse
+from backend.app.services import rag_service
 
 # --- DUMMY AUTH DEPENDENCY (to be replaced later) ---
 # In a real application, this would come from your auth service.
