@@ -21,4 +21,8 @@ class Settings:
     # We are using all-MiniLM-L6-v2, which has 384 dimensions.
     EMBEDDING_DIM: int = 384
 
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "DEFAULT_KEY")
+    OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "gpt-4o-mini")
+
 settings = Settings()
