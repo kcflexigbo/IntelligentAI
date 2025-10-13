@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional 
 
 class ChatRequest(BaseModel):
     """
@@ -14,3 +14,4 @@ class ChatResponse(BaseModel):
     """
     answer: str
     retrieved_context: List[str]
+    rewritten_question: Optional[str] = None
