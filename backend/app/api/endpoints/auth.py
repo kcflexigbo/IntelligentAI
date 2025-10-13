@@ -42,7 +42,13 @@ async def login_for_access_token(
     user = result.scalar_one_or_none()
 
     # Verify user and password
-    if not user or not auth_service.verify_password(form_data.password, user.hashed_password):
+    try:
+        auth_service.verify_password(form_data.password, user.hashed_password)
+    except Exception as e:
+        user = None
+        print(f"Error during password verification: {e}")
+
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

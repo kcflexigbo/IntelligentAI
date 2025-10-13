@@ -12,3 +12,4 @@ wheels/
 .env
 .env.*
 venv/
+rag_workflow.png
