@@ -142,14 +142,22 @@ async def grade_documents(state: RAGState) -> RAGState:
     question = state["rewritten_question"]
     documents_to_grade = state["documents"]
     
-    relevant_docs = []
-    for doc in documents_to_grade:
+    # Grade all documents in parallel
+    async def grade_single_doc(doc):
         result = await grading_chain.ainvoke({"question": question, "document": doc.content})
-        if result.binary_score.lower() == "yes":
+        is_relevant = result.binary_score.lower() == "yes"
+        if is_relevant:
             print(f"---Document ID {doc.id} is RELEVANT---")
-            relevant_docs.append(doc)
         else:
             print(f"---Document ID {doc.id} is NOT RELEVANT---")
+        return (doc, is_relevant)
+    
+    # Execute all grading tasks concurrently
+    import asyncio
+    grading_results = await asyncio.gather(*[grade_single_doc(doc) for doc in documents_to_grade])
+    
+    # Filter to keep only relevant documents
+    relevant_docs = [doc for doc, is_relevant in grading_results if is_relevant]
             
     return {**state, "documents": relevant_docs}
 

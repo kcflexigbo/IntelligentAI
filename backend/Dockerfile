@@ -14,7 +14,7 @@ COPY ./pyproject.toml ./uv.lock* ./
 # Increase timeout for large packages like torch (846MB+)
 ENV UV_HTTP_TIMEOUT=300
 # Use cache mount to persist uv cache between builds
-RUN --mount=type=cache,target=/root/.cache/pip \
+RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # --- Stage 2: Create the final production image ---
