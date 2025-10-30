@@ -24,9 +24,9 @@ target_metadata = None
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-from backend.app.core.config import settings  # Import settings to access DATABASE_URL
+from app.core.config import settings  # Import settings to access DATABASE_URL
 # Import the project's Base to provide MetaData for Alembic autogeneration
-from backend.app.db.models import Base
+from app.db.models import Base
 
 # Use the project's metadata for autogenerate support
 target_metadata = Base.metadata

@@ -23,6 +23,8 @@ services:
     container_name: learning-assistant-backend
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/docker.env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       SECRET_KEY: ${SECRET_KEY}
@@ -30,8 +32,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./backend:/app # Mount code for development; remove for production
+    # volumes:
+    #   - ./backend:/app # Mount code for development; remove for production
 
   frontend:
     build: ./frontend
