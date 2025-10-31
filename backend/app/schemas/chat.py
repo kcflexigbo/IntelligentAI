@@ -1,12 +1,12 @@
 from pydantic import BaseModel
-from typing import List, Optional 
+from typing import List, Optional
 
 class ChatRequest(BaseModel):
     """
     Schema for an incoming chat question.
+    The session_id is no longer needed in the body.
     """
     question: str
-    session_id: str  # To track conversation history later
 
 class ChatResponse(BaseModel):
     """
