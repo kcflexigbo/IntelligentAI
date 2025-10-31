@@ -39,4 +39,4 @@ EXPOSE 8000
 
 # Run alembic migrations and then start the server
 # This command ensures migrations are applied every time the container starts.
-CMD ["sh", "-c", "pwd && ls app  && alembic --config app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "pwd && ls app  && alembic --config app/alembic.ini upgrade head && uvicorn app.main:app --workers 5 --host 0.0.0.0 --port 8000"]

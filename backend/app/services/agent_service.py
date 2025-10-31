@@ -7,19 +7,18 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, Field
 from langchain_core.messages import BaseMessage
-
 from app.core.config import settings
 from app.services.rag_service import embeddings # Reuse the same embedding model
 from app.db import models
-
 
 class RAGState(TypedDict):
     """
     Represents the state of our RAG pipeline.
     """
+    conversation_id: int              # <-- ADD THIS LINE
     question: str
-    chat_history: List[BaseMessage] # <-- Add chat history
-    rewritten_question: str         # <-- Add rewritten question
+    chat_history: List[BaseMessage]
+    rewritten_question: str
     context: List[str]
     answer: str
     documents: List[models.DocumentChunk]
@@ -30,7 +29,6 @@ llm = ChatOpenAI(
     base_url=settings.OPENAI_BASE_URL,
     temperature=0.7,
 )
-
 prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -42,7 +40,6 @@ prompt = ChatPromptTemplate.from_messages(
         ("human", "{question}"),
     ]
 )
-
 rewriter_prompt = ChatPromptTemplate.from_messages(
     [
         (
@@ -85,9 +82,7 @@ grading_prompt = ChatPromptTemplate.from_messages(
         ("human", "Retrieved Document:\n\n{document}\n\nUser Question: {question}"),
     ]
 )
-
 grading_chain = grading_prompt | llm.with_structured_output(GradeDocuments)
-
 
 
 async def retrieve_node(state: RAGState, config: RunnableConfig) -> RAGState:
@@ -99,24 +94,31 @@ async def retrieve_node(state: RAGState, config: RunnableConfig) -> RAGState:
 
 async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
     """
-    Node to retrieve documents. This now retrieves more documents initially
-    and stores the full objects in the state.
+    Node to retrieve documents. This now only retrieves documents linked
+    to the specific conversation.
     """
     print("---RETRIEVING DOCUMENTS---")
     question_for_retrieval = state["rewritten_question"]
+    conversation_id = state["conversation_id"] # Get conversation_id from state
     
     question_embedding = embeddings.embed_query(question_for_retrieval)
     
+    # --- MODIFIED QUERY ---
+    # This query now joins through the document and the association table
+    # to filter chunks based on the current conversation_id.
     query = (
         select(models.DocumentChunk)
+        .join(models.Document, models.DocumentChunk.document_id == models.Document.id)
+        .join(models.Document.conversations)  # Joins through the conversation_document_link table
+        .where(models.Conversation.id == conversation_id)
         .order_by(models.DocumentChunk.embedding.l2_distance(question_embedding))
         .limit(10)
     )
+    
     result = await db.execute(query)
     retrieved_docs = result.scalars().all()
-    
+    print(f"---Retrieved {len(retrieved_docs)} documents for conversation {conversation_id}---")
     return {**state, "documents": retrieved_docs}
-
 
 async def rewrite_query(state: RAGState) -> RAGState:
     """
@@ -125,7 +127,6 @@ async def rewrite_query(state: RAGState) -> RAGState:
     print("---REWRITING QUESTION---")
     question = state["question"]
     chat_history = state["chat_history"]
-
     if not chat_history:
         return {**state, "rewritten_question": question}
 
@@ -141,8 +142,7 @@ async def grade_documents(state: RAGState) -> RAGState:
     print("---GRADING DOCUMENTS---")
     question = state["rewritten_question"]
     documents_to_grade = state["documents"]
-    
-    # Grade all documents in parallel
+
     async def grade_single_doc(doc):
         result = await grading_chain.ainvoke({"question": question, "document": doc.content})
         is_relevant = result.binary_score.lower() == "yes"
@@ -152,14 +152,12 @@ async def grade_documents(state: RAGState) -> RAGState:
             print(f"---Document ID {doc.id} is NOT RELEVANT---")
         return (doc, is_relevant)
     
-    # Execute all grading tasks concurrently
     import asyncio
     grading_results = await asyncio.gather(*[grade_single_doc(doc) for doc in documents_to_grade])
     
-    # Filter to keep only relevant documents
     relevant_docs = [doc for doc, is_relevant in grading_results if is_relevant]
-            
     return {**state, "documents": relevant_docs}
+
 
 async def generate_answer(state: RAGState) -> RAGState:
     """
@@ -169,10 +167,9 @@ async def generate_answer(state: RAGState) -> RAGState:
     print("---GENERATING ANSWER---")
     question = state["question"]
     context = [doc.content for doc in state["documents"]]
-    
     response = await rag_chain.ainvoke({"question": question, "context": "\n---\n".join(context)})
-    
     return {**state, "answer": response.answer, "context": context}
+
 
 def decide_to_generate(state: RAGState) -> str:
     """
@@ -182,19 +179,16 @@ def decide_to_generate(state: RAGState) -> str:
     print("---ASSESSING RELEVANCE---")
     if not state["documents"]:
         print("---No relevant documents found. Ending with fallback.---")
-        fallback_answer = "I could not find any relevant information in the provided documents to answer your question."
         return "end_with_fallback"
     else:
         return "generate"
 
-
+# --- Graph Definition (No changes needed here) ---
 workflow = StateGraph(RAGState)
-
 workflow.add_node("rewrite", rewrite_query)
 workflow.add_node("retrieve", retrieve_node)
 workflow.add_node("grade", grade_documents) 
 workflow.add_node("generate", generate_answer)
-# A special node for the fallback case
 workflow.add_node("end_with_fallback", 
                   lambda state: {
                       **state, 
@@ -218,11 +212,20 @@ workflow.add_edge("end_with_fallback", END)
 
 app = workflow.compile()
 
-app.get_graph().draw_mermaid_png(
-    output_file_path="rag_workflow.png"
-)
-
-async def invoke_agent(question: str, chat_history: List[BaseMessage], db: AsyncSession) -> dict:
-    initial_state = {"question": question, "chat_history": chat_history}
+# --- MODIFIED invoke_agent function signature ---
+async def invoke_agent(
+    question: str, 
+    chat_history: List[BaseMessage], 
+    db: AsyncSession,
+    conversation_id: int  # <-- ADD THIS ARGUMENT
+) -> dict:
+    
+    # Pass conversation_id into the initial state
+    initial_state = {
+        "question": question, 
+        "chat_history": chat_history,
+        "conversation_id": conversation_id
+    }
+    
     final_state = await app.ainvoke(initial_state, {"configurable": {"db": db}})
     return final_state

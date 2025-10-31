@@ -1,18 +1,20 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload # <-- IMPORT THIS
 from sqlalchemy.future import select
 from langchain_core.messages import HumanMessage, AIMessage
-
 from app.db.session import get_db
 from app.db import models
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.conversation import ConversationResponse, ChatMessageResponse
+from app.schemas.document import DocumentResponse # <-- IMPORT THIS
 from app.services import agent_service
 from app.services.auth_service import get_current_user
 
 router = APIRouter()
 
+# ... (create_conversation and get_conversations methods remain the same) ...
 @router.post("", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
     db: AsyncSession = Depends(get_db),
@@ -40,6 +42,31 @@ async def get_conversations(
     conversations = result.scalars().all()
     return conversations
 
+# --- NEW ENDPOINT ---
+@router.get("/{conversation_id}/documents", response_model=List[DocumentResponse])
+async def get_conversation_documents(
+    conversation_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Retrieves all documents associated with a specific conversation.
+    """
+    query = (
+        select(models.Conversation)
+        .options(selectinload(models.Conversation.documents)) # Eagerly load documents
+        .where(models.Conversation.id == conversation_id)
+        .where(models.Conversation.user_id == current_user.id)
+    )
+    result = await db.execute(query)
+    conversation = result.scalar_one_or_none()
+
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found or access denied")
+    
+    return conversation.documents
+
+# ... (get_conversation_messages, send_message_to_conversation, and delete_conversation methods remain the same) ...
 @router.get("/{conversation_id}/messages", response_model=List[ChatMessageResponse])
 async def get_conversation_messages(
     conversation_id: int,
@@ -49,15 +76,25 @@ async def get_conversation_messages(
     """
     Retrieves all messages for a specific conversation.
     """
-    query = select(models.ChatMessage).where(models.ChatMessage.conversation_id == conversation_id).order_by(models.ChatMessage.created_at)
+    query = (
+        select(models.ChatMessage)
+        .where(
+            models.ChatMessage.conversation_id == conversation_id,
+            models.ChatMessage.conversation.has(user_id=current_user.id)
+        )
+        .order_by(models.ChatMessage.created_at)
+    )
     result = await db.execute(query)
     messages = result.scalars().all()
     
-    # Ensure the conversation belongs to the user by checking the first message if it exists
-    if messages and messages[0].conversation.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this conversation")
-        
+    if not messages:
+        conv_res = await db.execute(select(models.Conversation).where(models.Conversation.id == conversation_id))
+        conversation = conv_res.scalar_one_or_none()
+        if not conversation or conversation.user_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this conversation")
+            
     return messages
+
 
 @router.post("/{conversation_id}/messages", response_model=ChatResponse)
 async def send_message_to_conversation(
@@ -69,18 +106,15 @@ async def send_message_to_conversation(
     """
     Sends a message to a specific conversation and gets a response from the agent.
     """
-    # Verify the conversation exists and belongs to the user
     conv_res = await db.execute(select(models.Conversation).where(models.Conversation.id == conversation_id))
     conversation = conv_res.scalar_one_or_none()
-
     if not conversation or conversation.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found or access denied")
 
     if not request.question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
-
+    
     try:
-        # Fetch history for this specific conversation
         history_query = (
             select(models.ChatMessage)
             .where(models.ChatMessage.conversation_id == conversation_id)
@@ -88,23 +122,25 @@ async def send_message_to_conversation(
         )
         result = await db.execute(history_query)
         db_messages = result.scalars().all()
-        
+
         chat_history = [
             HumanMessage(content=msg.content) if msg.is_from_user else AIMessage(content=msg.content)
             for msg in db_messages
         ]
 
-        # Invoke agent
-        final_state = await agent_service.invoke_agent(request.question, chat_history, db)
-
-        # Save user message
+        final_state = await agent_service.invoke_agent(
+            question=request.question,
+            chat_history=chat_history,
+            db=db,
+            conversation_id=conversation_id
+        )
+        
         user_message = models.ChatMessage(
             conversation_id=conversation_id,
             content=request.question,
             is_from_user=True
         )
         
-        # Save AI message
         ai_answer = final_state.get("answer", "Sorry, I couldn't process your request.")
         ai_message = models.ChatMessage(
             conversation_id=conversation_id,
@@ -114,10 +150,9 @@ async def send_message_to_conversation(
         
         db.add_all([user_message, ai_message])
 
-        # If this is the first message, update the conversation title
         if not db_messages:
-            conversation.title = request.question[:50] # Use first 50 chars as title
-
+            conversation.title = request.question[:50]
+        
         await db.commit()
 
         return ChatResponse(
@@ -146,4 +181,5 @@ async def delete_conversation(
         
     await db.delete(conversation)
     await db.commit()
+    
     return
