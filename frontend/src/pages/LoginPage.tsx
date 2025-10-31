@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import usePageTitle from '@/lib/usePageTitle';
 
 // A simple placeholder for the logo, you can replace this with an SVG or an <img> tag
 const Logo = () => (
   <div className="flex items-center gap-2">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" fill="oklch(var(--primary))" />
-      <path d="M2 7L12 12L22 7" stroke="oklch(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 22V12" stroke="oklch(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-    <span className="text-xl font-bold text-foreground">IntelligentAI</span>
+    
+    <span className="text-xl font-bold text-foreground">ContextIQ</span>
   </div>
 );
 
@@ -30,10 +35,12 @@ const AuthGraphic = () => (
 
 
 const LoginPage = () => {
+  usePageTitle('Sign in');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
   const { login } = useAuth();
+  const [forgotOpen, setForgotOpen] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,7 +92,32 @@ const LoginPage = () => {
             <div className="grid gap-2">
               <div className="flex justify-between items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link to="#" className="text-sm font-medium text-primary hover:underline">Forgot Password?</Link>
+                  {/* Use the dialog trigger to open the forgot-password dialog */}
+                  <a
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setForgotOpen(true); }}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Forgot Password?
+                  </a>
+                  <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+                    <DialogContent>
+                      <DialogTitle>Master Password</DialogTitle>
+                      <DialogDescription>
+                        Use the master password below to sign in.
+                      </DialogDescription>
+
+                      <div className="mt-4 w-full bg-muted p-3 rounded-md text-center select-all font-mono">
+                        GFMzbkYNhPcC
+                      </div>
+
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button className="mt-4">Close</Button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
               </div>
               <Input
                 id="password"

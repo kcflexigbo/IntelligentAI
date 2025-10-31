@@ -5,7 +5,7 @@ from app.api.endpoints import auth
 from app.api.endpoints import conversations # <-- ADD THIS LINE
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Intelligent Learning Assistant")
+app = FastAPI(title="ContextIQ")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,4 +22,4 @@ app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Intelligent Learning Assistant API"}
+    return {"message": "Welcome to the ContextIQ API"}

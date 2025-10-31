@@ -11,6 +11,7 @@ import ChatInput from '../components/ChatInput';
 import ConversationSidebar from '../components/ConversationSidebar';
 import DocumentSidebar from '../components/DocumentSidebar';
 import { Toaster, toast } from 'sonner';
+import usePageTitle from '@/lib/usePageTitle';
 
 // Type definition for backend response
 interface BackendChatMessage {
@@ -22,6 +23,7 @@ interface BackendChatMessage {
 }
 
 const HomePage = () => {
+  usePageTitle('ContextIQ');
   const { logout } = useAuth();
   
   // State Management
@@ -282,7 +284,7 @@ const HomePage = () => {
         <main className="flex-1 flex flex-col p-4" style={{ maxHeight: '100vh' }}>
           <Card className="w-full h-full flex flex-col overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b">
-              <CardTitle>Intelligent Learning Assistant</CardTitle>
+              <CardTitle>ContextIQ</CardTitle>
               <Button variant="outline" onClick={logout}>Logout</Button>
             </CardHeader>
             <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
