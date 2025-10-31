@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------------- */
-/*                         CRIMSON & SLATE - LIGHT MODE                      */
+/*                        VIBRANT INDIGO - LIGHT MODE                        */
 /* ------------------------------------------------------------------------- */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -18,85 +18,66 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --radius: 0.4rem; /* Sharper corners for a modern feel */
+  --radius: 0.5rem; /* Standard rounded corners */
 
   /* Base Colors */
-  --background: oklch(0.98 0.01 240);    /* Cool, very light gray */
-  --foreground: oklch(0.15 0.01 240);    /* Dark slate gray */
+  --background: oklch(1 0 0);             /* Pure White */
+  --foreground: oklch(0.25 0.02 240);     /* Dark Slate Blue */
 
   /* Card Colors */
-  --card: oklch(1 0 0);                 /* Pure white for cards */
-  --card-foreground: oklch(0.15 0.01 240);
+  --card: oklch(0.99 0.01 240);           /* Off-white for cards to lift them off the background */
+  --card-foreground: oklch(0.25 0.02 240);
 
-  /* Popover Colors */
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 240);
-
-  /* Primary (Crimson) Colors */
-  --primary: oklch(0.6 0.23 15);        /* Strong, vibrant red */
-  --primary-foreground: oklch(0.98 0.01 15); /* Light text for high contrast on red */
+  /* Primary (Indigo) Colors */
+  --primary: oklch(0.6 0.18 265);         /* Vibrant Indigo */
+  --primary-foreground: oklch(0.98 0.01 265); /* Light, almost white text */
 
   /* Secondary Colors */
-  --secondary: oklch(0.94 0.02 240);     /* Light, cool gray */
-  --secondary-foreground: oklch(0.15 0.01 240);
+  --secondary: oklch(0.96 0.02 240);      /* Light, cool gray */
+  --secondary-foreground: oklch(0.25 0.02 240);
 
   /* Muted Colors */
-  --muted: oklch(0.94 0.02 240);
-  --muted-foreground: oklch(0.5 0.01 240); /* Medium slate gray for muted text */
+  --muted: oklch(0.96 0.02 240);
+  --muted-foreground: oklch(0.5 0.02 240);
 
   /* Accent Colors */
-  --accent: oklch(0.94 0.02 240);
-  --accent-foreground: oklch(0.6 0.23 15); /* Red text on hover */
-
-  /* Destructive Colors */
-  --destructive: oklch(0.6 0.23 15);     /* Using the primary red for destructive actions */
+  --accent: oklch(0.96 0.02 240);
+  --accent-foreground: oklch(0.6 0.18 265);
 
   /* Other Interactive Colors */
-  --border: oklch(0.9 0.02 240);       /* Soft gray border */
-  --input: oklch(0.96 0.01 240);        /* Very light gray for input backgrounds */
-  --ring: oklch(0.65 0.25 15);          /* A slightly brighter red for focus rings */
+  --border: oklch(0.92 0.02 240);
+  --input: oklch(0.98 0.01 240);         /* Very light gray for inputs */
+  --ring: oklch(0.6 0.18 265);
+  --destructive: oklch(0.6 0.23 15);
 }
 
 
 /* ------------------------------------------------------------------------- */
-/*                          CRIMSON & SLATE - DARK MODE                      */
+/*                         VIBRANT INDIGO - DARK MODE                        */
 /* ------------------------------------------------------------------------- */
 .dark {
   /* Base Colors */
-  --background: oklch(0.15 0.01 240);    /* Dark slate */
-  --foreground: oklch(0.95 0.01 240);    /* Light gray text */
+  --background: oklch(0.18 0.02 250);    /* Dark Indigo-Slate */
+  --foreground: oklch(0.95 0.02 250);    /* Light gray text */
 
   /* Card Colors */
-  --card: oklch(0.19 0.01 240);          /* Slightly lighter slate for cards */
-  --card-foreground: oklch(0.95 0.01 240);
+  --card: oklch(0.22 0.02 250);
+  --card-foreground: oklch(0.95 0.02 250);
 
-  /* Popover Colors */
-  --popover: oklch(0.19 0.01 240);
-  --popover-foreground: oklch(0.95 0.01 240);
+  /* Primary (Indigo) Colors */
+  --primary: oklch(0.65 0.2 265);       /* Brighter Indigo for dark mode */
+  --primary-foreground: oklch(0.98 0.01 265);
 
-  /* Primary (Crimson) Colors */
-  --primary: oklch(0.65 0.25 15);       /* Lighter, more vivid red for dark backgrounds */
-  --primary-foreground: oklch(0.98 0.01 15);
-
-  /* Secondary Colors */
-  --secondary: oklch(0.25 0.02 240);     /* Medium-dark slate */
-  --secondary-foreground: oklch(0.95 0.01 240);
-
-  /* Muted Colors */
-  --muted: oklch(0.25 0.02 240);
-  --muted-foreground: oklch(0.65 0.01 240);
-
-  /* Accent Colors */
-  --accent: oklch(0.25 0.02 240);
-  --accent-foreground: oklch(0.65 0.25 15);
-
-  /* Destructive Colors */
-  --destructive: oklch(0.65 0.25 15);
+  /* Secondary & Muted Colors */
+  --secondary: oklch(0.28 0.02 250);
+  --secondary-foreground: oklch(0.95 0.02 250);
+  --muted: oklch(0.28 0.02 250);
+  --muted-foreground: oklch(0.65 0.02 250);
 
   /* Other Interactive Colors */
-  --border: oklch(0.25 0.02 240);
-  --input: oklch(0.22 0.01 240);
-  --ring: oklch(0.7 0.27 15);
+  --border: oklch(0.28 0.02 250);
+  --input: oklch(0.25 0.02 250);
+  --ring: oklch(0.65 0.2 265);
 }
 
 
@@ -135,4 +116,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}```
+}
