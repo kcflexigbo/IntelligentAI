@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input'; // <-- Import Input component
 import { cn } from '@/lib/utils';
 import type { Conversation } from '../types';
-import { PlusCircle, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil } from 'lucide-react'; // <-- Import Pencil icon
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
   activeConversationId: number | null;
   onNewChat: () => void;
   onSwitchConversation: (id: number) => void;
-  onDeleteConversation: (id: number) => void; // <-- ADD THIS LINE
+  onDeleteConversation: (id: number) => void;
+  onRenameConversation: (id: number, newTitle: string) => void; // <-- Add rename handler prop
   isCreating: boolean;
 }
 
@@ -18,73 +20,109 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   activeConversationId,
   onNewChat,
   onSwitchConversation,
-  onDeleteConversation, // <-- DESTRUCTURE THE PROP
+  onDeleteConversation,
+  onRenameConversation, // <-- Destructure handler
   isCreating,
 }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  // Stop event propagation to prevent switching conversation when deleting
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [tempTitle, setTempTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the input when editing starts
+  useEffect(() => {
+    if (editingId !== null) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editingId]);
+
   const handleDeleteClick = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     if (window.confirm('Are you sure you want to delete this conversation?')) {
-        onDeleteConversation(id);
+      onDeleteConversation(id);
+    }
+  };
+
+  const handleRenameClick = (e: React.MouseEvent, conversation: Conversation) => {
+    e.stopPropagation();
+    setEditingId(conversation.id);
+    setTempTitle(conversation.title); // Pre-fill with current title
+  };
+
+  const handleRenameSubmit = () => {
+    if (editingId && tempTitle.trim()) {
+      onRenameConversation(editingId, tempTitle.trim());
+    }
+    setEditingId(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      setEditingId(null); // Cancel editing on Escape
     }
   };
 
   return (
-  <div className={cn('flex flex-col h-full bg-white text-gray-800 border-r border-blue-200 p-4 gap-4 transition-all duration-200 shadow-lg', collapsed ? 'w-14' : 'w-72')}>
-      <div className="flex items-center justify-between">
-        <Button onClick={onNewChat} disabled={isCreating} className={cn('bg-blue-600 hover:bg-blue-700 text-white', collapsed && 'hidden')}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Chat
-        </Button>
-        <button
-          onClick={() => setCollapsed((s) => !s)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="p-2 rounded-md text-red-600"
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
-      </div>
-      {!collapsed && (
-        <div className="flex-grow overflow-y-auto pr-2">
+    <div className="flex flex-col h-full bg-card border-r p-4 gap-4 w-72">
+      <Button onClick={onNewChat} disabled={isCreating}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        New Chat
+      </Button>
+      <div className="flex-grow overflow-y-auto pr-2">
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold tracking-tight mb-2 text-blue-700">
-            History
-          </h2>
-          {conversations.length > 0 ? (
-            conversations.map((conv) => (
-              <div key={conv.id} className="relative group flex items-center">
+          <h2 className="text-lg font-semibold tracking-tight mb-2">History</h2>
+          {conversations.map((conv) => (
+            <div key={conv.id} className="relative group flex items-center w-full">
+              {editingId === conv.id ? (
+                <Input
+                  ref={inputRef}
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onBlur={handleRenameSubmit}
+                  onKeyDown={handleKeyDown}
+                  className="h-9"
+                />
+              ) : (
                 <Button
                   variant="ghost"
                   className={cn(
-                    'w-full justify-start text-left rounded-md transition-colors pr-8', // Add padding for the icon
+                    'w-full justify-start text-left rounded-md transition-colors pr-14', // Add padding for icons
                     activeConversationId === conv.id
-                      ? 'bg-blue-100 text-red-700 border border-red-300'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'text-muted-foreground'
                   )}
                   onClick={() => onSwitchConversation(conv.id)}
                 >
                   <p className="truncate">{conv.title}</p>
                 </Button>
-                <button
-                  onClick={(e) => handleDeleteClick(e, conv.id)}
-                  className={cn(
-                    'absolute right-1 p-1 rounded-md text-gray-500 hover:bg-red-100 hover:text-red-600 transition-colors',
-                    // Make it visible on hover, or always if it's the active chat
-                    activeConversationId === conv.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  )}
-                  aria-label="Delete conversation"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 px-2">No conversations yet.</p>
+              )}
+              {editingId !== conv.id && (
+                <div className="absolute right-1 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => handleRenameClick(e, conv)}
+                    className="p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    aria-label="Rename conversation"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteClick(e, conv.id)}
+                    className="p-1 rounded-md text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+                    aria-label="Delete conversation"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {conversations.length === 0 && (
+            <p className="text-sm text-muted-foreground px-2">No conversations yet.</p>
           )}
         </div>
       </div>
-      )}
     </div>
   );
 };

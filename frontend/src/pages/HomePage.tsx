@@ -34,7 +34,6 @@ const HomePage = () => {
   
   // Refs
   const messageListRef = useRef<HTMLDivElement>(null);
-  // The fileInputRefForSidebar is no longer needed
 
   // Effect to fetch conversations on initial load
   useEffect(() => {
@@ -42,6 +41,7 @@ const HomePage = () => {
       try {
         const response = await api.get<Conversation[]>('/conversations');
         setConversations(response.data);
+        // If conversations exist, load the first one by default
         if (response.data.length > 0) {
           handleSwitchConversation(response.data[0].id);
         }
@@ -60,8 +60,11 @@ const HomePage = () => {
     }
   }, [messages]);
 
+  /**
+   * Switches the active conversation and fetches its messages and documents.
+   */
   const handleSwitchConversation = async (id: number) => {
-    if (id === activeConversationId) return;
+    if (id === activeConversationId) return; // Avoid refetching if already active
     
     setActiveConversationId(id);
     setIsLoading(true);
@@ -69,6 +72,7 @@ const HomePage = () => {
     setDocuments([]);
 
     try {
+      // Fetch messages and documents in parallel for faster loading
       const [messagesResponse, documentsResponse] = await Promise.all([
         api.get<BackendChatMessage[]>(`/conversations/${id}/messages`),
         api.get<Document[]>(`/conversations/${id}/documents`),
@@ -92,12 +96,16 @@ const HomePage = () => {
     }
   };
 
+  /**
+   * Creates a new, empty conversation and sets it as active.
+   */
   const handleNewChat = async () => {
     setIsCreatingConversation(true);
     try {
       const response = await api.post<Conversation>('/conversations');
       const newConversation = response.data;
       setConversations(prev => [newConversation, ...prev]);
+      // Switch to the new conversation
       setActiveConversationId(newConversation.id);
       setMessages([]);
       setDocuments([]);
@@ -109,10 +117,15 @@ const HomePage = () => {
     }
   };
 
+  /**
+   * Deletes a conversation and handles UI updates.
+   */
   const handleDeleteConversation = async (id: number) => {
     const originalConversations = [...conversations];
+    // Optimistically remove from UI for a faster user experience
     setConversations(prev => prev.filter(c => c.id !== id));
     
+    // If the deleted conversation was active, clear the main panel
     if (activeConversationId === id) {
       setActiveConversationId(null);
       setMessages([]);
@@ -125,19 +138,48 @@ const HomePage = () => {
     } catch (error) {
       console.error('Failed to delete conversation:', error);
       toast.error("Failed to delete conversation. Please try again.");
+      // Rollback UI change if API call fails
       setConversations(originalConversations);
     }
   };
   
+  /**
+   * Handles renaming a conversation title.
+   */
+  const handleRenameConversation = async (id: number, newTitle: string) => {
+    const originalConversations = [...conversations];
+
+    // Optimistically update the UI for a snappy feel
+    setConversations(prev => 
+      prev.map(c => (c.id === id ? { ...c, title: newTitle } : c))
+    );
+
+    try {
+      // Send the update to the backend
+      await api.patch(`/conversations/${id}`, { title: newTitle });
+    } catch (error) {
+      console.error('Failed to rename conversation:', error);
+      toast.error("Failed to save the new title.");
+      // If the API call fails, revert the change in the UI
+      setConversations(originalConversations);
+    }
+  };
+  
+  /**
+   * Handles uploading a file. It will auto-create a conversation if none is active.
+   */
   const handleFileUpload = async (file: File) => {
     let conversationIdToUse = activeConversationId;
 
+    // If no conversation is active, create one for the document
     if (!conversationIdToUse) {
       try {
         setIsCreatingConversation(true);
         toast.info("Creating a new conversation for your document...");
         const response = await api.post<Conversation>('/conversations');
         conversationIdToUse = response.data.id;
+        
+        // Create a title based on the filename
         const newConversation = { ...response.data, title: file.name.substring(0, 50) };
         setConversations(prev => [newConversation, ...prev]);
         setActiveConversationId(conversationIdToUse);
@@ -168,10 +210,14 @@ const HomePage = () => {
     }
   };
 
+  /**
+   * Sends a user's message. It will auto-create a conversation if none is active.
+   */
   const handleSendMessage = async (userInput: string) => {
     let conversationIdToUse = activeConversationId;
     let isNewConversation = false;
 
+    // If no conversation is active, create one for the message
     if (!conversationIdToUse) {
         isNewConversation = true;
       try {
@@ -202,6 +248,7 @@ const HomePage = () => {
       const aiResponse: ChatMessage = { id: Date.now() + 1, sender: 'ai', text: response.data.answer };
       setMessages(prev => [...prev, aiResponse]);
       
+      // If a new conversation was created, update its title in the sidebar
       if (isNewConversation) {
         setConversations(prev => 
           prev.map(c => c.id === conversationIdToUse ? { ...c, title: userInput.substring(0, 50) } : c)
@@ -219,21 +266,24 @@ const HomePage = () => {
   return (
     <>
       <Toaster position="top-center" richColors />
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <div className="flex h-screen bg-muted/40">
+        {/* Left Sidebar for Conversations */}
         <ConversationSidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
           onNewChat={handleNewChat}
           onSwitchConversation={handleSwitchConversation}
           onDeleteConversation={handleDeleteConversation}
+          onRenameConversation={handleRenameConversation}
           isCreating={isCreatingConversation}
         />
 
+        {/* Main Chat Panel */}
         <main className="flex-1 flex flex-col p-4" style={{ maxHeight: '100vh' }}>
-          <Card className="w-full h-full flex flex-col overflow-hidden shadow-lg border-blue-200">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-blue-200">
-              <CardTitle className="text-blue-700">Intelligent Learning Assistant</CardTitle>
-              <Button variant="outline" className="text-blue-600 hover:bg-blue-50 border-blue-300" onClick={logout}>Logout</Button>
+          <Card className="w-full h-full flex flex-col overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between border-b">
+              <CardTitle>Intelligent Learning Assistant</CardTitle>
+              <Button variant="outline" onClick={logout}>Logout</Button>
             </CardHeader>
             <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
                 {activeConversationId ? (
@@ -260,6 +310,7 @@ const HomePage = () => {
           </Card>
         </main>
 
+        {/* Right Sidebar for Documents */}
         <DocumentSidebar documents={documents} />
       </div>
     </>

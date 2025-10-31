@@ -11,10 +11,10 @@ from app.schemas.conversation import ConversationResponse, ChatMessageResponse
 from app.schemas.document import DocumentResponse # <-- IMPORT THIS
 from app.services import agent_service
 from app.services.auth_service import get_current_user
+from app.schemas.conversation import ConversationResponse, ChatMessageResponse, ConversationUpdate
 
 router = APIRouter()
 
-# ... (create_conversation and get_conversations methods remain the same) ...
 @router.post("", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
     db: AsyncSession = Depends(get_db),
@@ -163,6 +163,37 @@ async def send_message_to_conversation(
     except Exception as e:
         print(f"Error invoking agent: {e}")
         raise HTTPException(status_code=500, detail="Failed to get a response from the agent.")
+
+
+@router.patch("/{conversation_id}", response_model=ConversationResponse)
+async def update_conversation_title(
+    conversation_id: int,
+    conversation_in: ConversationUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Updates the title of a specific conversation.
+    """
+    # Query for the existing conversation, ensuring it belongs to the current user
+    conv_res = await db.execute(
+        select(models.Conversation)
+        .where(models.Conversation.id == conversation_id)
+        .where(models.Conversation.user_id == current_user.id)
+    )
+    conversation = conv_res.scalar_one_or_none()
+    
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found or access denied")
+    
+    # Update the title and commit the change
+    conversation.title = conversation_in.title
+    db.add(conversation)
+    await db.commit()
+    await db.refresh(conversation)
+    
+    return conversation
+
 
 @router.delete("/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_conversation(

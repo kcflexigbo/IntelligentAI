@@ -1,6 +1,6 @@
 import React from 'react';
 import type { ChatMessage } from '../types';
-import { cn } from '@/lib/utils'; // Import the 'cn' utility
+import { cn } from '@/lib/utils';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -15,8 +15,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
           className={cn(
             'p-3 rounded-lg max-w-[70%] shadow-sm',
             msg.sender === 'user'
-              ? 'bg-blue-600 text-white self-end'
-              : 'bg-white border border-blue-200 text-gray-800 self-start'
+              ? 'bg-primary text-primary-foreground self-end'
+              : 'bg-card border border-border text-foreground self-start'
           )}
         >
           <p className="text-sm">{msg.text}</p>

@@ -1,18 +1,18 @@
-import React, { useState, useRef } from 'react'; // <-- Import useRef
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Paperclip, Send } from 'lucide-react'; // <-- Import icons
+import { Paperclip, Send } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
-  onFileUpload: (file: File) => void; // <-- Add file upload handler prop
+  onFileUpload: (file: File) => void;
   isLoading: boolean;
-  isConversationSelected: boolean; // <-- To disable upload button
+  isConversationSelected: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLoading, isConversationSelected }) => {
   const [input, setInput] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null); // <-- Ref for the hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,7 +23,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
   };
 
   const handleAttachClick = () => {
-    // Trigger the hidden file input when the button is clicked
     fileInputRef.current?.click();
   };
 
@@ -32,7 +31,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
     if (file) {
       onFileUpload(file);
     }
-    // Reset the input value to allow uploading the same file again
     if (e.target) {
         e.target.value = '';
     }
@@ -40,7 +38,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
 
   return (
     <form onSubmit={handleSubmit} className="flex w-full items-center space-x-2">
-      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -48,7 +45,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         className="hidden"
         accept=".pdf,.txt,.docx"
       />
-
       <Button
         type="button"
         variant="ghost"
@@ -56,20 +52,19 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         onClick={handleAttachClick}
         disabled={isLoading || !isConversationSelected}
         aria-label="Attach file"
-        className="hover:bg-blue-50 text-blue-600"
+        className="hover:bg-accent text-primary"
       >
         <Paperclip className="h-5 w-5" />
       </Button>
-
       <Input
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Ask a question about your documents..."
         disabled={isLoading || !isConversationSelected}
-        className="bg-blue-50 border-blue-200 focus:border-blue-400 focus:bg-white"
+        className="bg-secondary/50 border-border focus:bg-card"
       />
-      <Button type="submit" disabled={isLoading || !input.trim()} className="bg-blue-600 hover:bg-blue-700">
+      <Button type="submit" disabled={isLoading || !input.trim()}>
         <Send className="h-5 w-5" />
       </Button>
     </form>
