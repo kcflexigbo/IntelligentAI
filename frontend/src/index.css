@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ------------------------------------------------------------------------- */
-/*                           GOLDEN THEME - LIGHT MODE                       */
+/*                         CRIMSON & SLATE - LIGHT MODE                      */
 /* ------------------------------------------------------------------------- */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -18,105 +18,95 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --radius: 0.5rem; /* Slightly softer corners */
+  --radius: 0.4rem; /* Sharper corners for a modern feel */
 
   /* Base Colors */
-  --background: oklch(0.98 0.01 90);      /* Very light, warm off-white */
-  --foreground: oklch(0.25 0.03 80);     /* Dark charcoal with a hint of warmth */
+  --background: oklch(0.98 0.01 240);    /* Cool, very light gray */
+  --foreground: oklch(0.15 0.01 240);    /* Dark slate gray */
 
   /* Card Colors */
-  --card: oklch(1 0 0);                  /* Pure white for clean cards */
-  --card-foreground: oklch(0.25 0.03 80);
+  --card: oklch(1 0 0);                 /* Pure white for cards */
+  --card-foreground: oklch(0.15 0.01 240);
 
   /* Popover Colors */
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.03 80);
+  --popover-foreground: oklch(0.15 0.01 240);
 
-  /* Primary (Golden) Colors */
-  --primary: oklch(0.7 0.13 85);         /* Rich, classic gold */
-  --primary-foreground: oklch(0.2 0.03 80); /* Dark text for contrast on gold */
+  /* Primary (Crimson) Colors */
+  --primary: oklch(0.6 0.23 15);        /* Strong, vibrant red */
+  --primary-foreground: oklch(0.98 0.01 15); /* Light text for high contrast on red */
 
   /* Secondary Colors */
-  --secondary: oklch(0.94 0.03 90);      /* Light, sandy beige for secondary elements */
-  --secondary-foreground: oklch(0.7 0.13 85); /* Gold text on the light beige */
+  --secondary: oklch(0.94 0.02 240);     /* Light, cool gray */
+  --secondary-foreground: oklch(0.15 0.01 240);
 
   /* Muted Colors */
-  --muted: oklch(0.94 0.03 90);
-  --muted-foreground: oklch(0.5 0.03 85); /* Muted gray for less important text */
+  --muted: oklch(0.94 0.02 240);
+  --muted-foreground: oklch(0.5 0.01 240); /* Medium slate gray for muted text */
 
   /* Accent Colors */
-  --accent: oklch(0.94 0.03 90);
-  --accent-foreground: oklch(0.7 0.13 85);
+  --accent: oklch(0.94 0.02 240);
+  --accent-foreground: oklch(0.6 0.23 15); /* Red text on hover */
 
   /* Destructive Colors */
-  --destructive: oklch(0.6 0.22 25);     /* A deep, slightly muted red */
+  --destructive: oklch(0.6 0.23 15);     /* Using the primary red for destructive actions */
 
   /* Other Interactive Colors */
-  --border: oklch(0.88 0.02 90);        /* Soft, warm gray border */
-  --input: oklch(0.96 0.02 90);         /* Light beige for input backgrounds */
-  --ring: oklch(0.75 0.15 85);          /* A brighter gold for focus rings */
-
-  /* Chart Colors (Example) */
-  --chart-1: oklch(0.7 0.13 85);
-  --chart-2: oklch(0.55 0.08 270);
-  --chart-3: oklch(0.8 0.05 150);
-  --chart-4: oklch(0.6 0.1 50);
-  --chart-5: oklch(0.75 0.12 300);
+  --border: oklch(0.9 0.02 240);       /* Soft gray border */
+  --input: oklch(0.96 0.01 240);        /* Very light gray for input backgrounds */
+  --ring: oklch(0.65 0.25 15);          /* A slightly brighter red for focus rings */
 }
 
 
 /* ------------------------------------------------------------------------- */
-/*                           GOLDEN THEME - DARK MODE                        */
+/*                          CRIMSON & SLATE - DARK MODE                      */
 /* ------------------------------------------------------------------------- */
 .dark {
   /* Base Colors */
-  --background: oklch(0.18 0.02 85);    /* Very dark, warm charcoal */
-  --foreground: oklch(0.95 0.02 90);    /* Light cream text for readability */
+  --background: oklch(0.15 0.01 240);    /* Dark slate */
+  --foreground: oklch(0.95 0.01 240);    /* Light gray text */
 
   /* Card Colors */
-  --card: oklch(0.22 0.02 85);          /* Slightly lighter than the background */
-  --card-foreground: oklch(0.95 0.02 90);
+  --card: oklch(0.19 0.01 240);          /* Slightly lighter slate for cards */
+  --card-foreground: oklch(0.95 0.01 240);
 
   /* Popover Colors */
-  --popover: oklch(0.22 0.02 85);
-  --popover-foreground: oklch(0.95 0.02 90);
+  --popover: oklch(0.19 0.01 240);
+  --popover-foreground: oklch(0.95 0.01 240);
 
-  /* Primary (Golden) Colors */
-  --primary: oklch(0.78 0.16 85);       /* Brighter, more luminous gold for dark backgrounds */
-  --primary-foreground: oklch(0.2 0.02 85); /* Dark text for contrast */
+  /* Primary (Crimson) Colors */
+  --primary: oklch(0.65 0.25 15);       /* Lighter, more vivid red for dark backgrounds */
+  --primary-foreground: oklch(0.98 0.01 15);
 
   /* Secondary Colors */
-  --secondary: oklch(0.3 0.03 85);       /* Dark, muted gold */
-  --secondary-foreground: oklch(0.95 0.02 90); /* Light text on the dark gold */
+  --secondary: oklch(0.25 0.02 240);     /* Medium-dark slate */
+  --secondary-foreground: oklch(0.95 0.01 240);
 
   /* Muted Colors */
-  --muted: oklch(0.3 0.03 85);
-  --muted-foreground: oklch(0.65 0.02 90); /* Lighter gray for muted text */
+  --muted: oklch(0.25 0.02 240);
+  --muted-foreground: oklch(0.65 0.01 240);
 
   /* Accent Colors */
-  --accent: oklch(0.3 0.03 85);
-  --accent-foreground: oklch(0.95 0.02 90);
+  --accent: oklch(0.25 0.02 240);
+  --accent-foreground: oklch(0.65 0.25 15);
 
   /* Destructive Colors */
-  --destructive: oklch(0.65 0.22 25);   /* A slightly brighter red for dark mode */
+  --destructive: oklch(0.65 0.25 15);
 
   /* Other Interactive Colors */
-  --border: oklch(0.3 0.03 85);        /* Visible but not distracting border */
-  --input: oklch(0.25 0.02 85);        /* Dark input background */
-  --ring: oklch(0.78 0.16 85);          /* Bright gold focus ring */
+  --border: oklch(0.25 0.02 240);
+  --input: oklch(0.22 0.01 240);
+  --ring: oklch(0.7 0.27 15);
 }
 
 
 /* ------------------------------------------------------------------------- */
 /*                           CORE AND UTILITY STYLES                         */
 /* ------------------------------------------------------------------------- */
-
-/* This section connects the CSS variables to your shadcn/ui and Tailwind config. */
-/* Do not remove this section. */
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -136,11 +126,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
 }
 
 @layer base {
@@ -150,4 +135,4 @@
   body {
     @apply bg-background text-foreground;
   }
-}
+}```

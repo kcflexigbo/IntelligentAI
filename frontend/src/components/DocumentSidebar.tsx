@@ -15,8 +15,8 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ documents }) => {
     <div className={cn('flex flex-col h-full bg-card text-foreground border-l p-4 gap-4 transition-all duration-200 shadow-lg', collapsed ? 'w-14' : 'w-80')}>
       <div className="flex items-center justify-between">
         <CardHeader className={cn('p-2 pt-0', collapsed && 'hidden')}>
-          <CardTitle className="text-lg flex items-center text-primary-foreground font-semibold">
-            <Paperclip className="mr-2 h-5 w-5 text-primary" />
+          <CardTitle className="text-md flex items-center text-primary-foreground text-black font-semibold">
+            <Paperclip className="mr-2 h-5 w-5 text-primary text-black" />
             Attached Documents
           </CardTitle>
         </CardHeader>
@@ -40,7 +40,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ documents }) => {
               ))}
             </ul>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 ">
               <p className="text-sm text-muted-foreground">No documents uploaded.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Click the <Paperclip className="inline h-3 w-3 mx-1 text-primary" /> icon in the chat input to add a file to this conversation.
