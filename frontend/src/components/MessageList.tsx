@@ -13,10 +13,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
         <div
           key={msg.id}
           className={cn(
-            'p-3 rounded-lg max-w-[70%]',
+            'p-3 rounded-lg max-w-[70%] shadow-sm',
             msg.sender === 'user'
-              ? 'bg-primary text-primary-foreground self-end'
-              : 'bg-muted self-start'
+              ? 'bg-blue-600 text-white self-end'
+              : 'bg-white border border-blue-200 text-gray-800 self-start'
           )}
         >
           <p className="text-sm">{msg.text}</p>

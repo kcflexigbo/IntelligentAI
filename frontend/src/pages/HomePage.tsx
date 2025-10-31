@@ -219,7 +219,7 @@ const HomePage = () => {
   return (
     <>
       <Toaster position="top-center" richColors />
-      <div className="flex h-screen bg-muted/40">
+      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-blue-100">
         <ConversationSidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
@@ -230,10 +230,10 @@ const HomePage = () => {
         />
 
         <main className="flex-1 flex flex-col p-4" style={{ maxHeight: '100vh' }}>
-          <Card className="w-full h-full flex flex-col overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between border-b">
-              <CardTitle>Intelligent Learning Assistant</CardTitle>
-              <Button variant="outline" className="text-white" onClick={logout}>Logout</Button>
+          <Card className="w-full h-full flex flex-col overflow-hidden shadow-lg border-blue-200">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-blue-200">
+              <CardTitle className="text-blue-700">Intelligent Learning Assistant</CardTitle>
+              <Button variant="outline" className="text-blue-600 hover:bg-blue-50 border-blue-300" onClick={logout}>Logout</Button>
             </CardHeader>
             <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
                 {activeConversationId ? (

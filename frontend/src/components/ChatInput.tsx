@@ -56,8 +56,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         onClick={handleAttachClick}
         disabled={isLoading || !isConversationSelected}
         aria-label="Attach file"
+        className="hover:bg-blue-50 text-blue-600"
       >
-        <Paperclip className="h-5 w-5 text-white" />
+        <Paperclip className="h-5 w-5" />
       </Button>
 
       <Input
@@ -66,8 +67,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         onChange={(e) => setInput(e.target.value)}
         placeholder="Ask a question about your documents..."
         disabled={isLoading || !isConversationSelected}
+        className="bg-blue-50 border-blue-200 focus:border-blue-400 focus:bg-white"
       />
-      <Button type="submit" disabled={isLoading || !input.trim()}>
+      <Button type="submit" disabled={isLoading || !input.trim()} className="bg-blue-600 hover:bg-blue-700">
         <Send className="h-5 w-5" />
       </Button>
     </form>
