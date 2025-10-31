@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Conversation } from '../types';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
@@ -21,6 +21,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   onDeleteConversation, // <-- DESTRUCTURE THE PROP
   isCreating,
 }) => {
+  const [collapsed, setCollapsed] = useState(false);
   // Stop event propagation to prevent switching conversation when deleting
   const handleDeleteClick = (e: React.MouseEvent, id: number) => {
     e.stopPropagation(); 
@@ -30,12 +31,22 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-card border-r p-4 gap-4 w-72">
-      <Button onClick={onNewChat} disabled={isCreating}>
-        <PlusCircle className="mr-2 h-4 w-4" />
-        New Chat
-      </Button>
-      <div className="flex-grow overflow-y-auto pr-2">
+  <div className={cn('flex flex-col h-full bg-white text-black border-r p-4 gap-4 transition-all duration-200', collapsed ? 'w-14' : 'w-72')}>
+      <div className="flex items-center justify-between">
+        <Button onClick={onNewChat} disabled={isCreating} className={cn(collapsed && 'hidden')}>
+          <PlusCircle className="mr-2 h-4 w-4 text-white" />
+          New Chat
+        </Button>
+        <button
+          onClick={() => setCollapsed((s) => !s)}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-2 rounded-md hover:bg-muted/50"
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4 text-white" /> : <ChevronLeft className="h-4 w-4 text-white" />}
+        </button>
+      </div>
+      {!collapsed && (
+        <div className="flex-grow overflow-y-auto pr-2">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold tracking-tight mb-2">
             History
@@ -64,7 +75,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   )}
                   aria-label="Delete conversation"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-white" />
                 </button>
               </div>
             ))
@@ -73,6 +84,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

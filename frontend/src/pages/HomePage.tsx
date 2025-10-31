@@ -233,7 +233,7 @@ const HomePage = () => {
           <Card className="w-full h-full flex flex-col overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b">
               <CardTitle>Intelligent Learning Assistant</CardTitle>
-              <Button variant="outline" onClick={logout}>Logout</Button>
+              <Button variant="outline" className="text-white" onClick={logout}>Logout</Button>
             </CardHeader>
             <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
                 {activeConversationId ? (

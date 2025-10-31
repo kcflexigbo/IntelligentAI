@@ -57,7 +57,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         disabled={isLoading || !isConversationSelected}
         aria-label="Attach file"
       >
-        <Paperclip className="h-5 w-5" />
+        <Paperclip className="h-5 w-5 text-white" />
       </Button>
 
       <Input
