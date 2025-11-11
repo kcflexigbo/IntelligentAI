@@ -1,7 +1,7 @@
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: learning-assistant-db
+    container_name: ecolearn-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -20,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: ./backend/Dockerfile
-    container_name: learning-assistant-backend
+    container_name: ecolearn-backend
     ports:
       - "8000:8000"
     env_file:
@@ -37,7 +37,7 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: learning-assistant-frontend
+    container_name: ecolearn-frontend
     ports:
       - "8080:80" # Map host port 8080 to container port 80
     depends_on:

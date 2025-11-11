@@ -18,13 +18,13 @@ import usePageTitle from '@/lib/usePageTitle';
 const Logo = () => (
   <div className="flex items-center gap-2">
     
-    <span className="text-xl font-bold text-foreground">ContextIQ</span>
+    <span className="text-xl font-bold text-foreground">EcoLearn</span>
   </div>
 );
 
 // A placeholder for the 3D graphic. Replace this with your own illustration.
 const AuthGraphic = () => (
-  <div className="w-full h-full bg-gradient-to-br from-primary to-indigo-700 overflow-hidden">
+  <div className="w-full h-full bg-gradient-to-br from-primary to-green-700 overflow-hidden">
     <img
       className="w-full h-full object-cover"
       src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQenjW49W8L8xA0S2R5jU6vvoDrtPYxMC_3HtUM4sPewDhc4vIFEGcPLoNafP-3IpM2pE&usqp=CAU"

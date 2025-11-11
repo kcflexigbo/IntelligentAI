@@ -23,7 +23,7 @@ interface BackendChatMessage {
 }
 
 const HomePage = () => {
-  usePageTitle('ContextIQ');
+  usePageTitle('EcoLearn');
   const { logout } = useAuth();
   
   // State Management
