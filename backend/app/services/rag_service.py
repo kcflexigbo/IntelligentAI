@@ -95,3 +95,48 @@ async def process_and_embed_document(
     finally:
         # Clean up the temporary file
         os.remove(tmp_path)
+
+
+async def process_text_content(
+    db: AsyncSession,
+    document_record: models.Document,
+    text_content: str
+):
+    """
+    Process text content (from OCR or transcription) and create embeddings.
+
+    Args:
+        db: The database session.
+        document_record: The SQLAlchemy Document model instance.
+        text_content: The text content to process and embed.
+    """
+    if not text_content or not text_content.strip():
+        print("Warning: No text content to process.")
+        return
+
+    # Split the text into chunks
+    chunks = text_splitter.split_text(text_content)
+    
+    if not chunks:
+        print("Warning: Text could not be split into chunks.")
+        return
+
+    # Prepare DocumentChunk objects for bulk insertion
+    db_chunks: List[models.DocumentChunk] = []
+    
+    # Generate embeddings for all chunks in a single batch
+    chunk_embeddings = embeddings.embed_documents(chunks)
+
+    for i, chunk_text in enumerate(chunks):
+        db_chunks.append(
+            models.DocumentChunk(
+                document_id=document_record.id,
+                content=chunk_text,
+                embedding=chunk_embeddings[i]
+            )
+        )
+    
+    # Add all the new chunks to the session and commit
+    db.add_all(db_chunks)
+    await db.commit()
+    print(f"Successfully processed and stored {len(db_chunks)} chunks for document: {document_record.filename}")

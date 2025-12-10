@@ -43,7 +43,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept=".pdf,.txt,.docx"
+        accept=".pdf,.txt,.docx,.doc,.ppt,.pptx"
       />
       <Button
         type="button"
@@ -52,7 +52,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         onClick={handleAttachClick}
         disabled={isLoading || !isConversationSelected}
         aria-label="Attach file"
-        className="hover:bg-accent text-primary"
+        className="text-primary hover:bg-accent"
       >
         <Paperclip className="h-5 w-5" />
       </Button>

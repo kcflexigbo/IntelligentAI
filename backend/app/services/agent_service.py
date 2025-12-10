@@ -94,8 +94,9 @@ async def retrieve_node(state: RAGState, config: RunnableConfig) -> RAGState:
 
 async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
     """
-    Node to retrieve documents. This now only retrieves documents linked
-    to the specific conversation.
+    Node to retrieve documents. Retrieves both:
+    1. Documents linked to the specific conversation
+    2. Global course materials (is_course_material=True)
     """
     print("---RETRIEVING DOCUMENTS---")
     question_for_retrieval = state["rewritten_question"]
@@ -103,10 +104,8 @@ async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
     
     question_embedding = embeddings.embed_query(question_for_retrieval)
     
-    # --- MODIFIED QUERY ---
-    # This query now joins through the document and the association table
-    # to filter chunks based on the current conversation_id.
-    query = (
+    # Query 1: Conversation-specific documents
+    conversation_query = (
         select(models.DocumentChunk)
         .join(models.Document, models.DocumentChunk.document_id == models.Document.id)
         .join(models.Document.conversations)  # Joins through the conversation_document_link table
@@ -115,9 +114,43 @@ async def retrieve_documents(state: RAGState, db: AsyncSession) -> RAGState:
         .limit(10)
     )
     
-    result = await db.execute(query)
-    retrieved_docs = result.scalars().all()
-    print(f"---Retrieved {len(retrieved_docs)} documents for conversation {conversation_id}---")
+    # Query 2: Global course materials (accessible to all users)
+    course_materials_query = (
+        select(models.DocumentChunk)
+        .join(models.Document, models.DocumentChunk.document_id == models.Document.id)
+        .where(models.Document.is_course_material == True)
+        .order_by(models.DocumentChunk.embedding.l2_distance(question_embedding))
+        .limit(10)
+    )
+    
+    # Execute both queries
+    conv_result = await db.execute(conversation_query)
+    course_result = await db.execute(course_materials_query)
+    
+    conv_docs = conv_result.scalars().all()
+    course_docs = course_result.scalars().all()
+    
+    # Combine and re-sort by distance (taking top 10 most relevant)
+    all_docs = list(conv_docs) + list(course_docs)
+    
+    # Calculate distances for all documents and sort
+    if all_docs:
+        doc_distances = []
+        for doc in all_docs:
+            # Calculate L2 distance (embedding similarity)
+            import numpy as np
+            doc_embedding = np.array(doc.embedding)
+            question_emb = np.array(question_embedding)
+            distance = np.linalg.norm(doc_embedding - question_emb)
+            doc_distances.append((distance, doc))
+        
+        # Sort by distance (lower is better/more similar)
+        doc_distances.sort(key=lambda x: x[0])
+        retrieved_docs = [doc for _, doc in doc_distances[:10]]
+    else:
+        retrieved_docs = []
+    
+    print(f"---Retrieved {len(conv_docs)} conversation docs and {len(course_docs)} course materials (total: {len(retrieved_docs)} after ranking)---")
     return {**state, "documents": retrieved_docs}
 
 async def rewrite_query(state: RAGState) -> RAGState:

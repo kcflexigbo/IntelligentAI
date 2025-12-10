@@ -1,5 +1,5 @@
 def main():
-    print("Hello from intelligentai!")
+    print("Hello from ecolearn!")
 
 
 if __name__ == "__main__":

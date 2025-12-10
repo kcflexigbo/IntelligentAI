@@ -2,12 +2,30 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Brain } from 'lucide-react';
+import usePageTitle from '@/lib/usePageTitle';
+
+// A simple placeholder for the logo, you can replace this with an SVG or an <img> tag
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <span className="text-xl font-bold text-foreground">EcoLearn</span>
+  </div>
+);
+
+// A placeholder for the 3D graphic. Replace this with your own illustration.
+const AuthGraphic = () => (
+  <div className="w-full h-full bg-gradient-to-br from-primary to-green-700 overflow-hidden">
+    <img
+      className="w-full h-full object-cover"
+      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQenjW49W8L8xA0S2R5jU6vvoDrtPYxMC_3HtUM4sPewDhc4vIFEGcPLoNafP-3IpM2pE&usqp=CAU"
+      alt="Auth Graphic"
+    />
+  </div>
+);
 
 const RegisterPage = () => {
+  usePageTitle('Create an account');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -18,32 +36,38 @@ const RegisterPage = () => {
     setError('');
     try {
       await api.post('/auth/register', { email, password });
-      navigate('/login'); // Redirect to login after successful registration
+      navigate('/login');
     } catch (err) {
       setError('Failed to register. The email might already be in use.');
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Card className="w-full max-w-lg shadow-lg border-0 bg-white">
-        <div className="flex flex-col items-center pt-8 pb-2">
-          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center mb-4">
-            <Brain className="w-10 h-10 text-white" strokeWidth={2} />
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Left Column - Graphic */}
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
+        <AuthGraphic />
+      </div>
+
+      {/* Right Column - Form */}
+      <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8">
+          <div className="flex justify-start">
+            <Logo />
           </div>
-          <h1 className="text-2xl font-bold text-blue-600 mb-2 text-center">
-            Intelligent Learning Assistant
-          </h1>
-          <p className="text-gray-500 text-sm text-center">
-            Create an account to start learning
-          </p>
-        </div>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="grid gap-5 pt-6 px-8">
+
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Create an Account
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Get started by creating a new account.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
-              </Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -51,41 +75,36 @@ const RegisterPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 px-4 bg-blue-50 border-blue-200 focus:bg-white focus:border-blue-400"
+                className="h-12 px-4 bg-secondary border-border focus:bg-background"
               />
             </div>
+
             <div className="grid gap-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
-              </Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Create a strong password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-12 px-4 bg-blue-50 border-blue-200 focus:bg-white focus:border-blue-400"
+                className="h-12 px-4 bg-secondary border-border focus:bg-background"
               />
             </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button 
-              type="submit" 
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-all mt-2"
-            >
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full h-12 text-base font-semibold">
               Sign Up
             </Button>
-          </CardContent>
-        </form>
-        <CardFooter className="flex justify-center text-sm pb-8 pt-4">
-          <p className="text-gray-600 text-center">
+          </form>
+
+          <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+            <Link to="/login" className="font-semibold text-primary hover:underline">
               Sign in
             </Link>
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

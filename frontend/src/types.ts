@@ -25,5 +25,18 @@ export interface Document {
   id: number;
   filename: string;
   uploaded_at: string;
-  user_id: number;
+  user_id: number | null;
+  file_type: 'text' | 'image' | 'video';
+  s3_key?: string | null;
+  transcription?: string | null;
+  is_course_material: boolean;
+  course_id?: number | null;
+  course_name?: string | null; // Course name for badge display
+}
+
+export interface Course {
+  id: number;
+  name: string;
+  description?: string | null;
+  created_at: string;
 }
