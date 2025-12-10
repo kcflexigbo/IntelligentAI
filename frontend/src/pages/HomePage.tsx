@@ -10,8 +10,10 @@ import MessageList from '../components/MessageList';
 import ChatInput from '../components/ChatInput';
 import ConversationSidebar from '../components/ConversationSidebar';
 import DocumentSidebar from '../components/DocumentSidebar';
+import CourseMaterialsView from '../components/CourseMaterialsView';
 import { Toaster, toast } from 'sonner';
 import usePageTitle from '@/lib/usePageTitle';
+import { MessageSquare, BookOpen } from 'lucide-react';
 
 // Type definition for backend response
 interface BackendChatMessage {
@@ -33,6 +35,7 @@ const HomePage = () => {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
+  const [currentView, setCurrentView] = useState<'conversations' | 'course-materials'>('conversations');
   
   // Refs
   const messageListRef = useRef<HTMLDivElement>(null);
@@ -195,20 +198,70 @@ const HomePage = () => {
       }
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('conversation_id', String(conversationIdToUse));
-
     const toastId = toast.loading("Uploading and processing document...");
     try {
-      const response = await api.post<Document>('/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // Step 1: Get presigned upload URL
+      const uploadUrlResponse = await api.post<{
+        upload_url: string;
+        s3_key: string;
+        expires_in: number;
+      }>('/documents/upload-url', {
+        filename: file.name,
+        conversation_id: conversationIdToUse,
+        content_type: file.type || undefined,
       });
+
+      const { upload_url, s3_key } = uploadUrlResponse.data;
+
+      // Step 2: Upload directly to S3
+      toast.loading("Uploading to storage...", { id: toastId });
+      const uploadResponse = await fetch(upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+
+      // Step 3: Process the uploaded file
+      toast.loading("Processing document...", { id: toastId });
+      const response = await api.post<Document>('/documents/process-upload', {
+        s3_key: s3_key,
+        filename: file.name,
+        conversation_id: conversationIdToUse,
+      });
+      
       toast.success(`Successfully uploaded "${response.data.filename}"`, { id: toastId });
       setDocuments(prev => [...prev, response.data]);
     } catch (err) {
       toast.error('File upload failed. Please try again.', { id: toastId });
       console.error(err);
+    }
+  };
+
+  /**
+   * Handles deleting a document from a conversation.
+   */
+  const handleDeleteDocument = async (documentId: number) => {
+    if (!activeConversationId) {
+      toast.error('No active conversation.');
+      return;
+    }
+
+    try {
+      await api.delete(`/documents/${documentId}`);
+      toast.success('Document deleted successfully.');
+      
+      // Refresh documents list
+      const documentsResponse = await api.get<Document[]>(`/conversations/${activeConversationId}/documents`);
+      setDocuments(documentsResponse.data);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      toast.error('Failed to delete document. Please try again.');
     }
   };
 
@@ -284,36 +337,62 @@ const HomePage = () => {
         <main className="flex-1 flex flex-col p-4" style={{ maxHeight: '100vh' }}>
           <Card className="w-full h-full flex flex-col overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b">
-              <CardTitle>ContextIQ</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>ContextIQ</CardTitle>
+                <div className="flex items-center gap-1 ml-4">
+                  <Button
+                    variant={currentView === 'conversations' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentView('conversations')}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Conversations
+                  </Button>
+                  <Button
+                    variant={currentView === 'course-materials' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentView('course-materials')}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Course Materials
+                  </Button>
+                </div>
+              </div>
               <Button variant="outline" onClick={logout}>Logout</Button>
             </CardHeader>
-            <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
-                {activeConversationId ? (
-                  <MessageList messages={messages} />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <p className="text-muted-foreground text-center">
-                      {conversations.length > 0
-                        ? "Select a conversation to begin."
-                        : 'Click "New Chat" to start a conversation.'
-                      }
-                    </p>
-                  </div>
-                )}
-            </CardContent>
-            <CardFooter className="p-4 border-t">
-              <ChatInput
-                onSendMessage={handleSendMessage}
-                onFileUpload={handleFileUpload}
-                isLoading={isLoading || isCreatingConversation}
-                isConversationSelected={!!activeConversationId || isCreatingConversation}
-              />
-            </CardFooter>
+            {currentView === 'conversations' ? (
+              <>
+                <CardContent ref={messageListRef} className="flex-grow p-4 overflow-y-auto">
+                  {activeConversationId ? (
+                    <MessageList messages={messages} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <p className="text-muted-foreground text-center">
+                        {conversations.length > 0
+                          ? "Select a conversation to begin."
+                          : 'Click "New Chat" to start a conversation.'
+                        }
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="p-4 border-t">
+                  <ChatInput
+                    onSendMessage={handleSendMessage}
+                    onFileUpload={handleFileUpload}
+                    isLoading={isLoading || isCreatingConversation}
+                    isConversationSelected={!!activeConversationId || isCreatingConversation}
+                  />
+                </CardFooter>
+              </>
+            ) : (
+              <CourseMaterialsView />
+            )}
           </Card>
         </main>
 
         {/* Right Sidebar for Documents */}
-        <DocumentSidebar documents={documents} />
+        <DocumentSidebar documents={documents} onDeleteDocument={handleDeleteDocument} />
       </div>
     </>
   );

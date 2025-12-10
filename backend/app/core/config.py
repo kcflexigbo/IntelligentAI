@@ -25,6 +25,14 @@ class Settings:
 
     SECRET_KEY: str = os.getenv("SECRET_KEY", "a_default_secret_key")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3600 # 1 hour
+
+    # MinIO/S3 Configuration
+    MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "local-s3:9000")  # Internal endpoint for backend
+    MINIO_EXTERNAL_ENDPOINT: str = os.getenv("MINIO_EXTERNAL_ENDPOINT", "localhost:9000")  # External endpoint for frontend
+    MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "kenneth")
+    MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "kenneth2620")
+    MINIO_BUCKET_NAME: str = os.getenv("MINIO_BUCKET_NAME", "intelliteach")
+    MINIO_SECURE: bool = os.getenv("MINIO_SECURE", "False").lower() == "true"
 
 settings = Settings()

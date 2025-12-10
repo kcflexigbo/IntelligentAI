@@ -9,13 +9,22 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     Table,  # Import Table
-    func
+    func,
+    Enum as SQLEnum
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 from app.db.session import Base
 from app.core.config import settings
+import enum
+
+
+class FileType(str, enum.Enum):
+    """Enum for document file types."""
+    TEXT = "text"
+    IMAGE = "image"
+    VIDEO = "video"
 
 # Association Table for the many-to-many relationship
 conversation_document_link = Table(
@@ -35,14 +44,36 @@ class User(Base):
     documents = relationship("Document", back_populates="owner", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
+
+class Course(Base):
+    """Model for courses that have pre-loaded materials."""
+    __tablename__ = "courses"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    documents = relationship("Document", back_populates="course", cascade="all, delete-orphan")
+
+
 class Document(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Nullable for course materials
     uploaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    # Media-related fields
+    file_type = Column(SQLEnum(FileType, native_enum=False), nullable=False, default=FileType.TEXT)
+    s3_key = Column(String, nullable=True)  # Path in MinIO/S3
+    transcription = Column(Text, nullable=True)  # For video transcripts or OCR text
+    
+    # Course material fields
+    is_course_material = Column(Boolean, default=False, nullable=False, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
 
     owner = relationship("User", back_populates="documents")
+    course = relationship("Course", back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
     
     # Relationship to conversations through the association table

@@ -43,7 +43,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, onFileUpload, isLo
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept=".pdf,.txt,.docx"
+        accept=".pdf,.txt,.docx,.doc,.ppt,.pptx"
       />
       <Button
         type="button"

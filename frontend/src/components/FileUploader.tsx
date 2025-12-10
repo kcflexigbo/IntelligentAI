@@ -28,17 +28,42 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onUploadSuccess, conversati
     setUploading(true);
     setError('');
     
-    const formData = new FormData();
-    formData.append('file', file);
-    // Append conversation_id to the form data
-    formData.append('conversation_id', String(conversationId));
-
     try {
-      const response = await api.post<Document>('/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // Step 1: Get presigned upload URL from backend
+      const uploadUrlResponse = await api.post<{
+        upload_url: string;
+        s3_key: string;
+        expires_in: number;
+      }>('/documents/upload-url', {
+        filename: file.name,
+        conversation_id: conversationId,
+        content_type: file.type || undefined,
       });
+
+      const { upload_url, s3_key } = uploadUrlResponse.data;
+
+      // Step 2: Upload file directly to S3 using presigned URL
+      const uploadResponse = await fetch(upload_url, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`S3 upload failed: ${uploadResponse.statusText}`);
+      }
+
+      // Step 3: Notify backend to process the uploaded file
+      const processResponse = await api.post<Document>('/documents/process-upload', {
+        s3_key: s3_key,
+        filename: file.name,
+        conversation_id: conversationId,
+      });
+
       // Pass the full document object back
-      onUploadSuccess(response.data);
+      onUploadSuccess(processResponse.data);
       setFile(null); // Clear the file input after success
     } catch (err) {
       setError('File upload failed. Please try again.');
@@ -54,15 +79,20 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onUploadSuccess, conversati
         <CardTitle>Upload Document</CardTitle>
         <CardDescription>
           {conversationId 
-            ? "Upload a PDF, TXT, or DOCX file to this conversation."
+            ? "Upload documents (PDF, TXT, DOCX), images (JPG, PNG, etc.), or videos (MP4, AVI, etc.) to this conversation."
             : "Please select or start a conversation to upload documents."
           }
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Input type="file" onChange={handleFileChange} disabled={!conversationId} />
+        <Input 
+          type="file" 
+          onChange={handleFileChange} 
+          disabled={!conversationId}
+          accept=".pdf,.txt,.docx,.doc,.ppt,.pptx,.md,.jpg,.jpeg,.png,.gif,.bmp,.webp,.mp4,.avi,.mov,.wmv,.webm"
+        />
         <Button onClick={handleUpload} disabled={!file || uploading || !conversationId}>
-          {uploading ? 'Uploading...' : 'Upload Document'}
+          {uploading ? 'Uploading...' : 'Upload Document/Media'}
         </Button>
         {error && <p className="text-sm text-red-500">{error}</p>}
       </CardContent>

@@ -3,6 +3,8 @@ from app.api.endpoints import documents
 # from app.api.endpoints import chat # <-- REMOVE THIS LINE
 from app.api.endpoints import auth
 from app.api.endpoints import conversations # <-- ADD THIS LINE
+from app.api.endpoints import media
+from app.api.endpoints import course_materials
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="ContextIQ")
@@ -19,6 +21,8 @@ app.include_router(documents.router, prefix="/documents", tags=["documents"])
 # app.include_router(chat.router, prefix="/chat", tags=["chat"]) # <-- REMOVE THIS LINE
 app.include_router(conversations.router, prefix="/conversations", tags=["conversations"]) # <-- ADD THIS LINE
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(media.router, prefix="/media", tags=["media"])
+app.include_router(course_materials.router, prefix="/course-materials", tags=["course-materials"])
 
 @app.get("/")
 def read_root():

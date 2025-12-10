@@ -15,7 +15,16 @@ COPY ./pyproject.toml ./
 # For simplicity, this example installs all dependencies from pyproject.toml.
 RUN pip install --no-cache-dir .
 
-RUN pip install --no-cache-dir pgvector asyncpg langchain_huggingface
+RUN pip install --no-cache-dir pgvector asyncpg langchain_huggingface boto3 easyocr Pillow openai ffmpeg-python pydub numpy requests gunicorn
+
+# Install system dependencies for OCR and video processing
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # --- Stage 2: Create the final production image ---
 FROM pytorch/pytorch:2.9.0-cuda13.0-cudnn9-runtime
@@ -31,12 +40,16 @@ ENV PATH="/opt/conda/bin:${PATH}"
 
 # Copy the application source code
 COPY ./backend/app /app/app
-COPY ./alembic /app/app/alembic
-COPY ./alembic.ini /app/app/alembic.ini
+COPY ./alembic /app/alembic
+COPY ./alembic.ini /app/alembic.ini
+COPY ./backend/entrypoint.sh /app/entrypoint.sh
+COPY ./backend/scripts /app/scripts
+
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Run alembic migrations and then start the server
-# This command ensures migrations are applied every time the container starts.
-CMD ["sh", "-c", "pwd && ls app  && alembic --config app/alembic.ini upgrade head && uvicorn app.main:app --workers 5 --host 0.0.0.0 --port 8000"]
+# Use entrypoint script that runs migrations and seeds data on each start
+ENTRYPOINT ["/app/entrypoint.sh"]
